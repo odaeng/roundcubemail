@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>퀴즈 소리 레크레이션</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 40px 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sound-button {
+            padding: 30px;
+            font-size: 24px;
+            font-weight: bold;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sound-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .sound-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .sound-button:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        #timerBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        #timerBtn:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #65408b 100%);
+        }
+
+        #correctBtn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        #correctBtn:hover {
+            background: linear-gradient(135deg, #df83eb 0%, #e5475c 100%);
+        }
+
+        #wrongBtn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        #wrongBtn:hover {
+            background: linear-gradient(135deg, #3f9cee 0%, #00e2ee 100%);
+        }
+
+        .emoji {
+            font-size: 36px;
+            margin-right: 10px;
+        }
+
+        .playing {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 24px;
+                margin-bottom: 30px;
+            }
+
+            .sound-button {
+                padding: 25px;
+                font-size: 20px;
+            }
+
+            .emoji {
+                font-size: 30px;
+            }
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 퀴즈 소리 레크레이션</h1>
+        <div class="button-container">
+            <button id="timerBtn" class="sound-button">
+                <span class="emoji">⏰</span>타이머소리
+            </button>
+            <button id="correctBtn" class="sound-button">
+                <span class="emoji">✅</span>정답
+            </button>
+            <button id="wrongBtn" class="sound-button">
+                <span class="emoji">❌</span>오답
+            </button>
+        </div>
+    </div>
+    <div class="footer">
+        버튼을 눌러 소리를 재생하세요!
+    </div>
+
+    <script>
+        // Web Audio API 컨텍스트 생성
+        let audioContext = null;
+        let timerInterval = null;
+
+        // 오디오 컨텍스트 초기화 (사용자 인터랙션 후)
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // 타이머 재깍재깍 소리 (1초간 재생)
+        function playTimerSound() {
+            initAudioContext();
+
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                return;
+            }
+
+            let tickCount = 0;
+            const maxTicks = 10; // 10번 째깍
+
+            timerInterval = setInterval(() => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 800;
+                oscillator.type = 'square';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+
+                tickCount++;
+                if (tickCount >= maxTicks) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }, 100); // 0.1초마다 째깍
+        }
+
+        // 정답 딩동댕동 소리
+        function playCorrectSound() {
+            initAudioContext();
+
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            const noteDuration = 0.15;
+
+            notes.forEach((freq, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = freq;
+                oscillator.type = 'sine';
+
+                const startTime = audioContext.currentTime + (index * noteDuration);
+
+                gainNode.gain.setValueAtTime(0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + noteDuration);
+
+                oscillator.start(startTime);
+                oscillator.stop(startTime + noteDuration);
+            });
+        }
+
+        // 오답 땡 소리
+        function playWrongSound() {
+            initAudioContext();
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 200;
+            oscillator.type = 'sawtooth';
+
+            gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        // 버튼 애니메이션 효과
+        function addPlayingAnimation(button) {
+            button.classList.add('playing');
+            setTimeout(() => {
+                button.classList.remove('playing');
+            }, 500);
+        }
+
+        // 이벤트 리스너 등록
+        document.getElementById('timerBtn').addEventListener('click', function() {
+            playTimerSound();
+            addPlayingAnimation(this);
+        });
+
+        document.getElementById('correctBtn').addEventListener('click', function() {
+            playCorrectSound();
+            addPlayingAnimation(this);
+        });
+
+        document.getElementById('wrongBtn').addEventListener('click', function() {
+            playWrongSound();
+            addPlayingAnimation(this);
+        });
+
+        // iOS에서 오디오 재생을 위한 초기화
+        document.addEventListener('touchstart', function() {
+            initAudioContext();
+        }, { once: true });
+    </script>
+</body>
+</html>
