@@ -165,100 +165,38 @@
     </div>
 
     <script>
-        // Web Audio API 컨텍스트 생성
-        let audioContext = null;
-        let timerInterval = null;
+        // 오디오 객체 생성
+        const timerAudio = new Audio('timer.wav');
+        const correctAudio = new Audio('right-sound.wav');
+        const wrongAudio = new Audio('wrong-sound.wav');
 
-        // 오디오 컨텍스트 초기화 (사용자 인터랙션 후)
-        function initAudioContext() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }
+        // 볼륨 설정 (0.0 ~ 1.0)
+        timerAudio.volume = 0.7;
+        correctAudio.volume = 0.7;
+        wrongAudio.volume = 0.7;
 
-        // 타이머 재깍재깍 소리 (1초간 재생)
+        // 타이머 소리 재생
         function playTimerSound() {
-            initAudioContext();
-
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-                return;
-            }
-
-            let tickCount = 0;
-            const maxTicks = 10; // 10번 째깍
-
-            timerInterval = setInterval(() => {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.frequency.value = 800;
-                oscillator.type = 'square';
-
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
-
-                tickCount++;
-                if (tickCount >= maxTicks) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                }
-            }, 100); // 0.1초마다 째깍
-        }
-
-        // 정답 딩동댕동 소리
-        function playCorrectSound() {
-            initAudioContext();
-
-            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-            const noteDuration = 0.15;
-
-            notes.forEach((freq, index) => {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.frequency.value = freq;
-                oscillator.type = 'sine';
-
-                const startTime = audioContext.currentTime + (index * noteDuration);
-
-                gainNode.gain.setValueAtTime(0, startTime);
-                gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + noteDuration);
-
-                oscillator.start(startTime);
-                oscillator.stop(startTime + noteDuration);
+            timerAudio.currentTime = 0; // 처음부터 재생
+            timerAudio.play().catch(err => {
+                console.error('타이머 소리 재생 실패:', err);
             });
         }
 
-        // 오답 땡 소리
+        // 정답 소리 재생
+        function playCorrectSound() {
+            correctAudio.currentTime = 0; // 처음부터 재생
+            correctAudio.play().catch(err => {
+                console.error('정답 소리 재생 실패:', err);
+            });
+        }
+
+        // 오답 소리 재생
         function playWrongSound() {
-            initAudioContext();
-
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.frequency.value = 200;
-            oscillator.type = 'sawtooth';
-
-            gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.5);
+            wrongAudio.currentTime = 0; // 처음부터 재생
+            wrongAudio.play().catch(err => {
+                console.error('오답 소리 재생 실패:', err);
+            });
         }
 
         // 버튼 애니메이션 효과
@@ -285,10 +223,12 @@
             addPlayingAnimation(this);
         });
 
-        // iOS에서 오디오 재생을 위한 초기화
-        document.addEventListener('touchstart', function() {
-            initAudioContext();
-        }, { once: true });
+        // 모바일 환경을 위한 오디오 프리로드
+        window.addEventListener('load', function() {
+            timerAudio.load();
+            correctAudio.load();
+            wrongAudio.load();
+        });
     </script>
 </body>
 </html>
